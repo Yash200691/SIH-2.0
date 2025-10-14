@@ -8,7 +8,7 @@ async function signup({
   email,
   password,
   role,
-  organisation: organisationName,
+  organisation: organisationName, // This line is fine
 }) {
   if (!organisationName) {
     throw new Error("Organisation name is required.");
@@ -17,10 +17,10 @@ async function signup({
   if (existing) throw new Error("Email already in use");
 
   // Find or create the organisation by name
-  let organisation = await Organisation.findOne({ name: organisationName });
-  if (!organisation) {
-    organisation = new Organisation({ name: organisationName });
-    await organisation.save();
+  let orgDoc = await Organisation.findOne({ name: organisationName }); // Use a different variable name
+  if (!orgDoc) {
+    orgDoc = new Organisation({ name: organisationName });
+    await orgDoc.save();
   }
 
   const user = new User({
@@ -28,7 +28,7 @@ async function signup({
     email,
     password,
     role,
-    organisation: organisation._id, // Assign the ObjectId
+    organisation: orgDoc._id, // Use the ObjectId from the found/created orgDoc
   });
   await user.save();
   return user;
