@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
-const Organisation = require("../models/organisation.models"); // Import Organisation
+const Organisation = require("../models/organisation.models");
 const config = require("../config");
 
 async function signup({
@@ -8,29 +8,55 @@ async function signup({
   email,
   password,
   role,
-  organisation: organisationName, // This line is fine
+  organisation: organisationName,
 }) {
-  if (!organisationName) {
-    throw new Error("Organisation name is required.");
-  }
-  const existing = await User.findOne({ email });
-  if (existing) throw new Error("Email already in use");
+  // Add a log to see exactly what value is being received for the organisation.
+  console.log(
+    `[AuthService] Signup attempt with organisationName: "${organisationName}"`
+  );
 
-  // Find or create the organisation by name
-  let orgDoc = await Organisation.findOne({ name: organisationName }); // Use a different variable name
-  if (!orgDoc) {
-    orgDoc = new Organisation({ name: organisationName });
-    await orgDoc.save();
+  if (
+    !organisationName ||
+    typeof organisationName !== "string" ||
+    organisationName.trim() === ""
+  ) {
+    const err = new Error("Organisation name must be a non-empty string.");
+    err.status = 400; // Bad Request
+    throw err;
   }
 
-  const user = new User({
+  let orgDoc;
+  try {
+    // Use a case-insensitive regex for a more robust search and trim whitespace.
+    const trimmedOrgName = organisationName.trim();
+    orgDoc = await Organisation.findOne({
+      name: { $regex: new RegExp(`^${trimmedOrgName}$`, "i") },
+    });
+
+    if (!orgDoc) {
+      console.log(
+        `[AuthService] Organisation "${trimmedOrgName}" not found. Creating new one.`
+      );
+      orgDoc = await Organisation.create({ name: trimmedOrgName });
+    }
+  } catch (error) {
+    console.error(
+      "[AuthService] Error finding or creating organisation:",
+      error
+    );
+    const err = new Error("Could not find or create the organisation.");
+    err.status = 500;
+    throw err;
+  }
+
+  const user = await User.create({
     name,
     email,
     password,
     role,
-    organisation: orgDoc._id, // Use the ObjectId from the found/created orgDoc
+    organisation: orgDoc._id,
   });
-  await user.save();
+
   return user;
 }
 
