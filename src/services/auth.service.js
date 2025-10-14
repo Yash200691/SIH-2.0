@@ -8,17 +8,17 @@ async function signup({
   email,
   password,
   role,
-  organisation: organisationName,
+  organisation
 }) {
   // Add a log to see exactly what value is being received for the organisation.
   console.log(
-    `[AuthService] Signup attempt with organisationName: "${organisationName}"`
+    `[AuthService] Signup attempt with : "${organisation}"`
   );
 
   if (
-    !organisationName ||
-    typeof organisationName !== "string" ||
-    organisationName.trim() === ""
+    !organisation ||
+    typeof organisation !== "string" ||
+    organisation.trim() === ""
   ) {
     const err = new Error("Organisation name must be a non-empty string.");
     err.status = 400; // Bad Request
@@ -28,7 +28,7 @@ async function signup({
   let orgDoc;
   try {
     // Use a case-insensitive regex for a more robust search and trim whitespace.
-    const trimmedOrgName = organisationName.trim();
+    const trimmedOrgName = organisation.trim();
     orgDoc = await Organisation.findOne({
       name: { $regex: new RegExp(`^${trimmedOrgName}$`, "i") },
     });
