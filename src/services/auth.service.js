@@ -64,7 +64,7 @@ async function login({ email, password }) {
   const user = await User.findOne({ email });
   if (!user) throw new Error("Invalid credentials");
   const match = await user.comparePassword(password);
-  if (!match) throw new Error("Invalid credentials");
+  if (!match) throw new Error("Invalid credentialss");
   const token = jwt.sign(
     { id: user._id, email: user.email },
     config.jwtSecret,
